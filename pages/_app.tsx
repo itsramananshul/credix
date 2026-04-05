@@ -12,6 +12,7 @@
 import type { AppProps } from 'next/app'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
+import Script from 'next/script'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { Layout } from '@/components/layout/Layout'
 import '@/styles/globals.css'
@@ -61,6 +62,11 @@ function AppContent({ Component, pageProps }: AppProps) {
 export default function App(props: AppProps) {
   return (
     <AuthProvider>
+      {/* Teller Connect widget — loaded from CDN, adds window.TellerConnect */}
+      <Script
+        src="https://cdn.teller.io/connect/connect.js"
+        strategy="beforeInteractive"
+      />
       <AppContent {...props} />
     </AuthProvider>
   )
