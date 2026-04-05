@@ -7,9 +7,13 @@
  */
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/types'
+
+// Auth-helpers browser client — stores the session as a cookie so
+// createPagesServerClient() in API routes can read it server-side.
+const supabase = createPagesBrowserClient()
 
 interface AuthContextValue {
   user:       User | null
