@@ -45,11 +45,11 @@ export default function TransactionsPage() {
   async function syncNow() {
     setSyncing(true)
     try {
-      const res  = await fetch('/api/plaid/fetch-transactions', { method: 'POST' })
+      const res  = await fetch('/api/teller/fetch-transactions', { method: 'POST' })
       const data = await res.json()
       toast.success(`Synced ${data.added ?? 0} new transactions`)
     } catch {
-      toast.error('Sync failed — are bank accounts connected?')
+      toast.error('Sync failed — connect a bank account first')
     } finally {
       setSyncing(false)
     }

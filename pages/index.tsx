@@ -20,7 +20,7 @@ import { SpendingChart } from '@/components/dashboard/SpendingChart'
 import { BudgetCard } from '@/components/dashboard/BudgetCard'
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
 import { InsightCard } from '@/components/dashboard/InsightCard'
-import { PlaidLinkButton } from '@/components/plaid/PlaidLink'
+import { TellerConnectButton } from '@/components/teller/TellerConnect'
 import { Alert } from '@/components/ui/Alert'
 import { Card } from '@/components/ui/Card'
 import type { SpendingByCategory, BankAccount } from '@/types'
@@ -82,7 +82,7 @@ export default function DashboardPage() {
   async function syncTransactions() {
     setSyncing(true)
     try {
-      const res = await fetch('/api/plaid/fetch-transactions', { method: 'POST' })
+      const res = await fetch('/api/teller/fetch-transactions', { method: 'POST' })
       const data = await res.json()
       toast.success(`Synced ${data.added ?? 0} new transactions`)
       refetchAccounts()
@@ -120,14 +120,14 @@ export default function DashboardPage() {
               {syncing ? 'Syncing…' : 'Sync'}
             </button>
           )}
-          <PlaidLinkButton onSuccess={() => { refetchAccounts(); toast.success('Bank connected!') }} />
+          <TellerConnectButton onSuccess={() => { refetchAccounts(); toast.success('Bank connected!') }} />
         </div>
       </div>
 
       {/* No accounts CTA */}
       {accounts.length === 0 && (
         <Alert variant="info" title="Connect your bank to get started">
-          Link a bank account using Plaid and we&apos;ll automatically import your transactions,
+          Link a bank account using Teller and we&apos;ll automatically import your transactions,
           detect subscriptions, and track your budgets.
         </Alert>
       )}

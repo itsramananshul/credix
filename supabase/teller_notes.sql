@@ -1,0 +1,27 @@
+-- ============================================================================
+-- Teller integration notes
+-- No schema changes needed — we reuse existing columns with these mappings:
+--
+--   plaid_items table:
+--     item_id              → stores Teller enrollment_id
+--     access_token         → stores Teller access_token (same security rules)
+--     institution_name     → stores bank name from Teller enrollment
+--     transaction_cursor   → NOT USED (Teller uses date-based pagination)
+--
+--   bank_accounts table:
+--     plaid_account_id     → stores Teller account id
+--     plaid_item_id        → FK to plaid_items.id (same relationship)
+--
+--   transactions table:
+--     plaid_transaction_id → stores Teller transaction id
+--     plaid_category       → NOT USED (Teller puts category in plaid_raw)
+--     plaid_raw            → stores full Teller transaction JSON
+--
+-- Amount sign convention:
+--   Teller:  negative = money OUT (debit),  positive = money IN (credit)
+--   Our DB:  positive = money OUT (debit),  negative = money IN (credit)
+--   → We negate Teller amounts before storing: amount = -(teller.amount)
+-- ============================================================================
+
+-- No SQL to run — existing schema works as-is.
+-- This file is for documentation only.

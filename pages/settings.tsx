@@ -11,7 +11,7 @@
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { PlaidLinkButton } from '@/components/plaid/PlaidLink'
+import { TellerConnectButton } from '@/components/teller/TellerConnect'
 import { Card } from '@/components/ui/Card'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import type { BankAccount } from '@/types'
@@ -159,7 +159,7 @@ export default function SettingsPage() {
       {/* ── Connected bank accounts ───────────────────────────────────── */}
       <Card
         title="Connected Accounts"
-        action={<PlaidLinkButton onSuccess={refetchAccounts} />}
+        action={<TellerConnectButton onSuccess={refetchAccounts} />}
       >
         {accounts.length === 0 ? (
           <p className="text-sm text-gray-400 py-2">No accounts connected yet.</p>
