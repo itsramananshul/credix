@@ -44,7 +44,7 @@ export function detectSubscriptionsFromTransactions(
 
   const detected: DetectedSubscription[] = []
 
-  for (const [merchantKey, txns] of byMerchant) {
+  for (const [merchantKey, txns] of Array.from(byMerchant.entries())) {
     if (txns.length < 2) continue  // Need at least 2 occurrences
 
     // Sort by date ascending
