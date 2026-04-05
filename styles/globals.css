@@ -1,0 +1,56 @@
+/* styles/globals.css — Tailwind base + any global overrides */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    @apply font-sans text-gray-900 antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar         { @apply w-1.5 h-1.5; }
+  ::-webkit-scrollbar-track   { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb   { @apply bg-gray-200 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-300; }
+}
+
+@layer components {
+  /* Primary button */
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 active:bg-primary-700
+           text-white font-medium text-sm px-4 py-2.5 rounded-xl
+           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary / outline button */
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm
+           px-4 py-2.5 rounded-xl border border-gray-200 transition-colors;
+  }
+
+  /* Form input */
+  .input {
+    @apply w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm
+           focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent
+           placeholder:text-gray-400 transition-shadow;
+  }
+
+  /* Label */
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  /* Page title */
+  .page-title {
+    @apply text-2xl font-bold text-gray-900;
+  }
+
+  /* Section heading */
+  .section-title {
+    @apply text-lg font-semibold text-gray-900;
+  }
+}

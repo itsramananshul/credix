@@ -1,0 +1,48 @@
+# .github/workflows/production.yml
+#
+# Runs on every push to `main`:
+#   1. Type-checks TypeScript
+#   2. Lints code
+#   3. Vercel deploys to production automatically via Git integration
+#      (no deploy step needed here — Vercel watches `main` directly)
+
+name: Production CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    name: CI checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (verify it compiles)
+        run: npm run build
+        env:
+          # Provide stub values so Next.js doesn't crash on missing env vars at build time
+          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PLAID_CLIENT_ID:               ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET:                  ${{ secrets.PLAID_SECRET }}
+          PLAID_ENV:                     sandbox
