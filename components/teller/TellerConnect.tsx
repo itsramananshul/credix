@@ -1,13 +1,13 @@
 /**
  * components/teller/TellerConnect.tsx
  *
- * Teller Connect is loaded via a CDN <script> tag (not an npm package).
- * The script adds window.TellerConnect to the page.
- * We call window.TellerConnect.setup() on button click to open the modal.
+ * Teller Connect is loaded via CDN <script> in pages/_app.tsx.
+ * The script injects window.TellerConnect on the page.
  *
- * The script is injected once in pages/_app.tsx via next/script.
+ * ⚠️  Requires NEXT_PUBLIC_TELLER_APP_ID in your .env.local (and Vercel env vars).
+ *     Get it from: https://teller.io/settings/application → Application ID
  *
- * Teller sandbox test credentials (any values work):
+ * Sandbox test credentials (any values work):
  *   Username: testuser   Password: testpass
  */
 
@@ -15,8 +15,7 @@ import { useCallback } from 'react'
 import { BuildingLibraryIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
-// ─── Teller Connect type declarations ────────────────────────────────────────
-// These match the shape of window.TellerConnect injected by the CDN script.
+// ─── Teller window type ───────────────────────────────────────────────────────
 interface TellerAuthorization {
   accessToken: string
   enrollment: {
@@ -27,12 +26,12 @@ interface TellerAuthorization {
 }
 
 interface TellerConnectConfig {
-  appId:        string
-  environment?: 'sandbox' | 'development' | 'production'
-  products?:    string[]
-  onSuccess:    (authorization: TellerAuthorization) => void
-  onExit?:      () => void
-  onFailure?:   (err: unknown) => void
+  applicationId: string                   // ← Teller uses "applicationId", NOT "appId"
+  environment?:  'sandbox' | 'development' | 'production'
+  products?:     string[]
+  onSuccess:     (authorization: TellerAuthorization) => void
+  onExit?:       () => void
+  onFailure?:    (err: unknown) => void
 }
 
 interface TellerConnectInstance {
@@ -58,65 +57,78 @@ interface TellerConnectButtonProps {
 export function TellerConnectButton({ onSuccess, className }: TellerConnectButtonProps) {
 
   const handleClick = useCallback(() => {
-    // Guard: script may not be loaded yet on very slow connections
-    if (typeof window === 'undefined' || !window.TellerConnect) {
-      toast.error('Teller is still loading — please try again in a second')
+    // Guard 1: env var missing
+    const appId = process.env.NEXT_PUBLIC_TELLER_APP_ID
+    if (!appId) {
+      toast.error('NEXT_PUBLIC_TELLER_APP_ID is not set. Add it to .env.local and Vercel env vars.')
+      console.error('[Credix] Missing NEXT_PUBLIC_TELLER_APP_ID env var')
       return
     }
 
-    const tc = window.TellerConnect.setup({
-      appId:       process.env.NEXT_PUBLIC_TELLER_APP_ID ?? '',
-      environment: (process.env.NEXT_PUBLIC_TELLER_ENV ?? 'sandbox') as 'sandbox' | 'development' | 'production',
-      products:    ['transactions'],
+    // Guard 2: CDN script not loaded yet (very slow connection)
+    if (typeof window === 'undefined' || !window.TellerConnect) {
+      toast.error('Bank connection is still loading — please try again in a moment')
+      return
+    }
 
-      onSuccess: async (authorization) => {
-        const loadingToast = toast.loading(
-          `Connecting ${authorization.enrollment.institution.name}…`,
-        )
-        try {
-          // Step 1 — store enrollment (access_token saved server-side)
-          const enrollRes = await fetch('/api/teller/enrollment', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-              access_token:     authorization.accessToken,
-              enrollment_id:    authorization.enrollment.id,
-              institution_name: authorization.enrollment.institution.name,
-            }),
-          })
+    let tc: TellerConnectInstance | null = null
 
-          if (!enrollRes.ok) {
-            const { error } = await enrollRes.json()
-            throw new Error(error ?? 'Failed to save enrollment')
+    try {
+      tc = window.TellerConnect.setup({
+        applicationId: appId,             // ← correct key name
+        environment:   (process.env.NEXT_PUBLIC_TELLER_ENV ?? 'sandbox') as
+                         'sandbox' | 'development' | 'production',
+        products:      ['transactions'],
+
+        onSuccess: async (authorization) => {
+          const loadingToast = toast.loading(
+            `Connecting ${authorization.enrollment.institution.name}…`,
+          )
+          try {
+            const enrollRes = await fetch('/api/teller/enrollment', {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({
+                access_token:     authorization.accessToken,
+                enrollment_id:    authorization.enrollment.id,
+                institution_name: authorization.enrollment.institution.name,
+              }),
+            })
+
+            if (!enrollRes.ok) {
+              const { error } = await enrollRes.json()
+              throw new Error(error ?? 'Failed to save enrollment')
+            }
+
+            toast.dismiss(loadingToast)
+            toast.success(`${authorization.enrollment.institution.name} connected!`)
+
+            // First sync — fire and forget
+            fetch('/api/teller/fetch-transactions', { method: 'POST' })
+              .then((r) => r.json())
+              .then((d) => { if (d.added > 0) toast.success(`Imported ${d.added} transactions`) })
+              .catch(() => {})
+
+            onSuccess?.()
+          } catch (err: any) {
+            toast.dismiss(loadingToast)
+            toast.error(err.message ?? 'Failed to connect bank account')
           }
+        },
 
-          toast.dismiss(loadingToast)
-          toast.success(`${authorization.enrollment.institution.name} connected!`)
+        onExit: () => {},
 
-          // Step 2 — trigger first transaction sync (fire-and-forget)
-          fetch('/api/teller/fetch-transactions', { method: 'POST' })
-            .then((r) => r.json())
-            .then((d) => { if (d.added > 0) toast.success(`Imported ${d.added} transactions`) })
-            .catch(() => {})
+        onFailure: (err) => {
+          console.error('[Teller] connect failure:', err)
+          toast.error('Bank connection failed — please try again')
+        },
+      })
 
-          onSuccess?.()
-        } catch (err: any) {
-          toast.dismiss(loadingToast)
-          toast.error(err.message ?? 'Failed to connect bank account')
-        }
-      },
-
-      onExit: () => {
-        // User closed the modal without connecting — no action needed
-      },
-
-      onFailure: (err) => {
-        console.error('[Teller] connect failure:', err)
-        toast.error('Bank connection failed — please try again')
-      },
-    })
-
-    tc.open()
+      tc.open()
+    } catch (err: any) {
+      console.error('[Teller] setup error:', err)
+      toast.error('Failed to open bank connection — check your Teller App ID')
+    }
   }, [onSuccess])
 
   return (

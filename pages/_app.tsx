@@ -65,7 +65,7 @@ export default function App(props: AppProps) {
       {/* Teller Connect widget — loaded from CDN, adds window.TellerConnect */}
       <Script
         src="https://cdn.teller.io/connect/connect.js"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
       />
       <AppContent {...props} />
     </AuthProvider>
