@@ -12,7 +12,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAccounts, getBalance } from '@/lib/teller'
 
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   // Authenticate user via Supabase session
-  const supabase = createRouteHandlerClient({ cookies: () => req.cookies as any })
+  const supabase = createPagesServerClient({ req, res })
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return res.status(401).json({ error: 'Unauthorized' })
